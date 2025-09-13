@@ -73,10 +73,10 @@ function updateUIForLoggedOutUser() {
     if (userMenu) userMenu.style.display = 'none';
 }
 
-// 注册功能 - 修改为使用固定邮箱和自定义元数据
+// 注册功能 - 使用固定邮箱格式
 async function register(username, password) {
-    // 使用固定邮箱格式，但将用户名存储在user_metadata中
-    const fixedEmail = `user.${Date.now()}@lzm-community.com`;
+    // 使用固定邮箱格式，将用户名存储在user_metadata中
+    const fixedEmail = `user.${Date.now()}@example.com`;
     
     const { data, error } = await supabase.auth.signUp({
         email: fixedEmail,
