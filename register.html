@@ -65,6 +65,19 @@
             }
 
             try {
+                // 检查用户名是否已存在
+                const { data: existingUser, error: checkError } = await supabase
+                    .from('profiles')
+                    .select('username')
+                    .eq('username', username)
+                    .single();
+
+                if (existingUser && !checkError) {
+                    messageDiv.textContent = '用户名已被注册，请选择其他用户名';
+                    messageDiv.style.color = 'red';
+                    return;
+                }
+
                 await register(username, password);
                 messageDiv.textContent = '注册成功！正在跳转...';
                 messageDiv.style.color = 'green';
@@ -72,11 +85,7 @@
                     window.location.href = 'index.html';
                 }, 1000);
             } catch (error) {
-                if (error.message.includes('already registered')) {
-                    messageDiv.textContent = '用户名已被注册，请选择其他用户名';
-                } else {
-                    messageDiv.textContent = error.message;
-                }
+                messageDiv.textContent = error.message;
                 messageDiv.style.color = 'red';
             }
         });
