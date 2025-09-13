@@ -284,3 +284,140 @@ a:hover {
         gap: 10px;
     }
 }
+
+/* 添加以下样式到现有的styles.css文件中 */
+
+.message {
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.form-group small {
+    display: block;
+    margin-top: 5px;
+    color: #666;
+    font-size: 0.85rem;
+}
+
+.admin-item {
+    background: #fff;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.admin-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.admin-item-header h4 {
+    margin-right: 10px;
+}
+
+.admin-item-content {
+    margin-bottom: 10px;
+}
+
+.admin-item-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-admin.danger {
+    background: #dc3545;
+}
+
+.btn-admin.danger:hover {
+    background: #c82333;
+}
+
+.comment {
+    background: #f9f9f9;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.comment-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.comment-header .avatar.small {
+    width: 30px;
+    height: 30px;
+    margin-right: 10px;
+}
+
+.comment-date {
+    margin-left: auto;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.comment-content {
+    margin-bottom: 10px;
+}
+
+.comment-actions {
+    text-align: right;
+}
+
+.profile-card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.avatar.large {
+    width: 80px;
+    height: 80px;
+    margin-right: 20px;
+}
+
+.profile-details h2 {
+    margin-bottom: 5px;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.admin-tabs {
+    display: flex;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #ddd;
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+}
+
+.tab-btn.active {
+    border-bottom-color: #007bff;
+    color: #007bff;
+}
