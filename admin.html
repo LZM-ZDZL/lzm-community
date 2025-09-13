@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理后台 - LZM社区</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="index.html">LZM社区</a>
+        </div>
+        <div class="nav-links">
+            <a href="index.html">首页</a>
+            <div id="auth-links">
+                <!-- 由auth.js动态填充 -->
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="main-content">
+            <h2>管理后台</h2>
+            <div class="admin-tabs">
+                <button class="tab-btn active" data-tab="posts">帖子管理</button>
+                <button class="tab-btn" data-tab="users">用户管理</button>
+            </div>
+
+            <div id="posts-tab" class="tab-content active">
+                <h3>帖子管理</h3>
+                <div id="admin-posts-list"></div>
+            </div>
+
+            <div id="users-tab" class="tab-content">
+                <h3>用户管理</h3>
+                <div id="admin-users-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="auth.js"></script>
+    <script>
+        // 检查管理员权限
+        function checkAdminPermission() {
+            if (!currentUser || !currentUser.profile || (currentUser.profile.role !== 'admin' && currentUser.profile.role !== 'moderator')) {
+                window.location.href = 'index.html';
+            }
+        }
+
+        // 加载所有帖子
+        async function loadAllPosts() {
+            const { data: posts, error } = await supabase
+                .from('posts')
+                .select(`
+                    *,
+                    profiles:user_id (username)
+                `)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('加载帖子失败:', error);
+                return;
+            }
+
+            renderAdminPosts(posts);
+        }
+
+        // 渲染帖子管理列表
+        function renderAdminPosts(posts) {
+            const postsListEl = document.getElementById('admin-posts-list');
+            postsListEl.innerHTML = '';
+
+            posts.forEach(post => {
+                const postEl = document.createElement('div');
+                postEl.className = 'admin-item';
+                const createdAt = new Date(post.created_at).toLocaleDateString('zh-CN');
+
+                postEl.innerHTML = `
+                    <div class="admin-item-header">
+                        <h4>${post.title}</h4>
+                        <span>作者: ${post.profiles.username}</span>
+                        <span>时间: ${createdAt}</span>
+                    </div>
+                    <div class="admin-item-content">
+                        <p>${post.content.substring(0, 100)}${post.content.length > 100 ? '...' : ''}</p>
+                    </div>
+                    <div class="admin-item-actions">
+                        <button class="btn-admin" onclick="pinPost(${post.id}, ${!post.is_pinned})">
+                            ${post.is_pinned ? '取消置顶' : '置顶'}
+                        </button>
+                        <button class="btn-admin" onclick="highlightPost(${post.id}, ${!post.is_highlighted})">
+                            ${post.is_highlighted ? '取消精华' : '加精'}
+                        </button>
+                        <button class="btn-admin danger" onclick="deletePost(${post.id})">删除</button>
+                    </div>
+                `;
+                postsListEl.appendChild(postEl);
+            });
+        }
+
+        // 加载所有用户
+        async function loadAllUsers() {
+            const { data: users, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('加载用户失败:', error);
+                return;
+            }
+
+            renderAdminUsers(users);
+        }
+
+        // 渲染用户管理列表
+        function renderAdminUsers(users) {
+            const usersListEl = document.getElementById('admin-users-list');
+            usersListEl.innerHTML = '';
+
+            users.forEach(user => {
+                const userEl = document.createElement('div');
+                userEl.className = 'admin-item';
+                const joinedDate = new Date(user.created_at).toLocaleDateString('zh-CN');
+
+                userEl.innerHTML = `
+                    <div class="admin-item-header">
+                        <h4>${user.username}</h4>
+                        <span>角色: ${user.role}</span>
+                        <span>加入时间: ${joinedDate}</span>
+                    </div>
+                    <div class="admin-item-actions">
+                        <select onchange="changeUserRole('${user.id}', this.value)">
+                            <option value="user" ${user.role === 'user' ? 'selected' : ''}>用户</option>
+                            <option value="moderator" ${user.role === 'moderator' ? 'selected' : ''}>版主</option>
+                            <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>管理员</option>
+                        </select>
+                        <button class="btn-admin danger" onclick="banUser('${user.id}', ${!user.is_banned})">
+                            ${user.is_banned ? '解封' : '封禁'}
+                        </button>
+                    </div>
+                `;
+                usersListEl.appendChild(userEl);
+            });
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+            checkAdminPermission();
+            loadAllPosts();
+
+            // 标签切换
+            document.querySelectorAll('.tab-btn').forEach(button => {
+                button.addEventListener('click', () => {
+                    const tab = button.dataset.tab;
+                    
+                    // 切换按钮状态
+                    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    
+                    // 切换内容
+                    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                    document.getElementById(`${tab}-tab`).classList.add('active');
+
+                    // 加载对应数据
+                    if (tab === 'posts') {
+                        loadAllPosts();
+                    } else if (tab === 'users') {
+                        loadAllUsers();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
