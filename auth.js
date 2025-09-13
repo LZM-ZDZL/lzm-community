@@ -73,13 +73,13 @@ function updateUIForLoggedOutUser() {
     if (userMenu) userMenu.style.display = 'none';
 }
 
-// 注册功能 - 修改为使用用户名和密码
+// 注册功能 - 修改为使用固定邮箱和自定义元数据
 async function register(username, password) {
-    // 使用用户名作为唯一标识符，生成一个虚拟邮箱
-    const virtualEmail = `${username}@lzm-community.local`;
+    // 使用固定邮箱格式，但将用户名存储在user_metadata中
+    const fixedEmail = `user.${Date.now()}@lzm-community.com`;
     
     const { data, error } = await supabase.auth.signUp({
-        email: virtualEmail,
+        email: fixedEmail,
         password: password,
         options: {
             data: {
@@ -111,34 +111,45 @@ async function register(username, password) {
     return data;
 }
 
-// 登录功能 - 修改为使用用户名和密码
+// 登录功能 - 通过用户名查找对应的邮箱
 async function login(username, password) {
-    // 使用用户名生成虚拟邮箱
-    const virtualEmail = `${username}@lzm-community.local`;
-    
-    const { data, error } = await supabase.auth.signInWithPassword({
-        email: virtualEmail,
-        password: password
-    });
+    try {
+        // 首先在profiles表中查找用户名对应的用户ID
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('username', username)
+            .single();
 
-    if (error) {
-        // 如果登录失败，尝试另一种可能的虚拟邮箱格式
-        const virtualEmail2 = `${username.toLowerCase().replace(/\s+/g, '')}@lzm-community.local`;
-        if (virtualEmail !== virtualEmail2) {
-            const { data: data2, error: error2 } = await supabase.auth.signInWithPassword({
-                email: virtualEmail2,
-                password: password
-            });
-            
-            if (error2) {
-                throw error;
-            }
-            return data2;
+        if (profileError) {
+            throw new Error('用户名不存在');
         }
+
+        // 然后通过用户ID查找auth.users表中的邮箱
+        const { data: authUser, error: authError } = await supabase
+            .from('auth.users')
+            .select('email')
+            .eq('id', profile.id)
+            .single();
+
+        if (authError) {
+            throw new Error('用户认证信息不存在');
+        }
+
+        // 使用找到的邮箱进行登录
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email: authUser.email,
+            password: password
+        });
+
+        if (error) {
+            throw error;
+        }
+
+        return data;
+    } catch (error) {
         throw error;
     }
-
-    return data;
 }
 
 // 退出功能
