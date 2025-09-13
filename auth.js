@@ -24,9 +24,6 @@ async function checkAuth() {
         if (profile) {
             currentUser.profile = profile;
             updateProfileUI(profile);
-        } else {
-            // 如果还没有用户资料，重定向到完善资料页面
-            window.location.href = 'complete-profile.html';
         }
     } else {
         updateUIForLoggedOutUser();
@@ -35,40 +32,58 @@ async function checkAuth() {
 
 // 更新UI为已登录状态
 function updateUIForLoggedInUser() {
-    document.getElementById('login-link').style.display = 'none';
-    document.getElementById('register-link').style.display = 'none';
-    document.getElementById('user-menu').style.display = 'flex';
+    const loginLink = document.getElementById('login-link');
+    const registerLink = document.getElementById('register-link');
+    const userMenu = document.getElementById('user-menu');
+    
+    if (loginLink) loginLink.style.display = 'none';
+    if (registerLink) registerLink.style.display = 'none';
+    if (userMenu) userMenu.style.display = 'flex';
 }
 
 // 更新用户资料UI
 function updateProfileUI(profile) {
-    document.getElementById('profile-link').textContent = profile.username;
-    document.getElementById('profile-link').href = `profile.html?id=${profile.id}`;
+    const profileLink = document.getElementById('profile-link');
+    if (profileLink) {
+        profileLink.textContent = profile.username;
+        profileLink.href = `profile.html?id=${profile.id}`;
+    }
     
     // 如果是管理员，显示管理链接
     if (profile.role === 'admin' || profile.role === 'moderator') {
-        const adminLink = document.createElement('a');
-        adminLink.href = 'admin.html';
-        adminLink.textContent = '管理';
-        document.querySelector('.nav-links').appendChild(adminLink);
+        const navLinks = document.querySelector('.nav-links');
+        if (navLinks && !document.querySelector('.admin-link')) {
+            const adminLink = document.createElement('a');
+            adminLink.href = 'admin.html';
+            adminLink.textContent = '管理';
+            adminLink.className = 'admin-link';
+            navLinks.appendChild(adminLink);
+        }
     }
 }
 
 // 更新UI为未登录状态
 function updateUIForLoggedOutUser() {
-    document.getElementById('login-link').style.display = 'inline';
-    document.getElementById('register-link').style.display = 'inline';
-    document.getElementById('user-menu').style.display = 'none';
+    const loginLink = document.getElementById('login-link');
+    const registerLink = document.getElementById('register-link');
+    const userMenu = document.getElementById('user-menu');
+    
+    if (loginLink) loginLink.style.display = 'inline';
+    if (registerLink) registerLink.style.display = 'inline';
+    if (userMenu) userMenu.style.display = 'none';
 }
 
-// 注册功能
-async function register(email, password, username) {
+// 注册功能 - 修改为使用用户名和密码
+async function register(username, password) {
+    // 使用用户名作为唯一标识符，生成一个虚拟邮箱
+    const virtualEmail = `${username}@lzm-community.local`;
+    
     const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
+        email: virtualEmail,
+        password: password,
         options: {
             data: {
-                username
+                username: username
             }
         }
     });
@@ -96,14 +111,30 @@ async function register(email, password, username) {
     return data;
 }
 
-// 登录功能
-async function login(email, password) {
+// 登录功能 - 修改为使用用户名和密码
+async function login(username, password) {
+    // 使用用户名生成虚拟邮箱
+    const virtualEmail = `${username}@lzm-community.local`;
+    
     const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
+        email: virtualEmail,
+        password: password
     });
 
     if (error) {
+        // 如果登录失败，尝试另一种可能的虚拟邮箱格式
+        const virtualEmail2 = `${username.toLowerCase().replace(/\s+/g, '')}@lzm-community.local`;
+        if (virtualEmail !== virtualEmail2) {
+            const { data: data2, error: error2 } = await supabase.auth.signInWithPassword({
+                email: virtualEmail2,
+                password: password
+            });
+            
+            if (error2) {
+                throw error;
+            }
+            return data2;
+        }
         throw error;
     }
 
