@@ -3,59 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LZM 社区</title>
+    <title>LZM社区</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <style>
-        body { font-family: sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
-        .post { border: 1px solid #ddd; padding: 1rem; margin-bottom: 1rem; border-radius: 5px; }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>欢迎来到 LZM 社区</h1>
-    <p>这是一个测试页面，用于验证 GitHub Pages 托管和 Supabase 连接。</p>
-    <div id="posts">
-        <p>正在加载帖子...</p>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="index.html">LZM社区</a>
+        </div>
+        <div class="nav-links">
+            <a href="index.html">首页</a>
+            <a href="new-post.html">发帖</a>
+            <div id="auth-links">
+                <a href="login.html" id="login-link">登录</a>
+                <a href="register.html" id="register-link">注册</a>
+                <div id="user-menu" style="display: none;">
+                    <a href="profile.html" id="profile-link"></a>
+                    <a href="#" id="logout-link">退出</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <h3>标签</h3>
+                <div class="tags">
+                    <a href="#" class="tag" data-tag="提问">提问</a>
+                    <a href="#" class="tag" data-tag="分享">分享</a>
+                    <a href="#" class="tag" data-tag="讨论">讨论</a>
+                    <a href="#" class="tag" data-tag="新闻">新闻</a>
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <h3>热门帖子</h3>
+                <div id="hot-posts"></div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="filters">
+                <button class="filter-btn active" data-filter="new">最新</button>
+                <button class="filter-btn" data-filter="hot">热门</button>
+                <button class="filter-btn" data-filter="top">置顶</button>
+            </div>
+
+            <div id="posts-container"></div>
+            <div id="loading" class="loading">加载中...</div>
+            <div id="no-more" class="no-more" style="display: none;">没有更多帖子了</div>
+        </div>
     </div>
 
-    <script>
-        // 重要：请替换成您自己的 URL 和 Key
-        const supabaseUrl = 'https://ymkthiwxtxngjgtlncxt.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlta3RoaXd4dHhuZ2pndGxuY3h0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc2ODEyOTYsImV4cCI6MjA3MzI1NzI5Nn0.Xk7HoZQjRZ_4gjTncMAJijQuwvKnIgMOw7tR1MDKvBY';
-        
-        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-
-        async function loadPosts() {
-            // 尝试从 profiles 表读取数据
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('username, created_at')
-                .limit(5);
-
-            const postsContainer = document.getElementById('posts');
-
-            if (error) {
-                console.error('连接Supabase失败:', error);
-                postsContainer.innerHTML = '<p style="color: red;">连接数据库失败: ' + error.message + '</p>';
-                return;
-            }
-
-            if (data && data.length > 0) {
-                // 如果成功获取到数据，动态生成列表
-                const postsHtml = data.map(profile => `
-                    <div class="post">
-                        <h3>用户: ${profile.username}</h3>
-                        <p>加入时间: ${new Date(profile.created_at).toLocaleString('zh-CN')}</p>
-                    </div>
-                `).join('');
-
-                postsContainer.innerHTML = postsHtml;
-            } else {
-                postsContainer.innerHTML = '<p>还没有用户数据，快去创建一条吧！</p>';
-            }
-        }
-
-        // 页面加载后执行
-        loadPosts();
-    </script>
+    <script src="auth.js"></script>
+    <script src="main.js"></script>
 </body>
 </html>
