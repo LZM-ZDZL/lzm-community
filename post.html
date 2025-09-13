@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>帖子详情 - LZM社区</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="index.html">LZM社区</a>
+        </div>
+        <div class="nav-links">
+            <a href="index.html">首页</a>
+            <a href="new-post.html">发帖</a>
+            <div id="auth-links">
+                <!-- 由auth.js动态填充 -->
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="main-content">
+            <div id="post-detail"></div>
+            
+            <div class="comments-section">
+                <h3>评论</h3>
+                <form id="new-comment-form">
+                    <div class="form-group">
+                        <textarea id="comment-content" placeholder="写下你的评论..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn">发表评论</button>
+                </form>
+                <div id="comments-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="auth.js"></script>
+    <script>
+        let postId = new URLSearchParams(window.location.search).get('id');
+
+        // 获取帖子详情
+        async function loadPostDetail() {
+            const { data: post, error } = await supabase
+                .from('posts')
+                .select(`
+                    *,
+                    profiles:user_id (username, avatar_url)
+                `)
+                .eq('id', postId)
+                .single();
+
+            if (error) {
+                console.error('加载帖子失败:', error);
+                return;
+            }
+
+            // 更新浏览量
+            await supabase
+                .from('posts')
+                .update({ view_count: (post.view_count || 0) + 1 })
+                .eq('id', postId);
+
+            renderPostDetail(post);
+        }
+
+        // 渲染帖子详情
+        function renderPostDetail(post) {
+            const postDetailEl = document.getElementById('post-detail');
+            const createdAt = new Date(post.created_at).toLocaleDateString('zh-CN');
+            const tagsHtml = post.tags && post.tags.length > 0 ? 
+                post.tags.map(tag => `<span class="tag">${tag}</span>`).join('') : '';
+
+            postDetailEl.innerHTML = `
+                <div class="post">
+                    <div class="post-header">
+                        <div class="post-meta">
+                            <img src="${post.profiles.avatar_url || 'default-avatar.png'}" alt="${post.profiles.username}" class="avatar">
+                            <div class="post-author">
+                                <a href="profile.html?id=${post.user_id}">${post.profiles.username}</a>
+                                <span class="post-date">${createdAt}</span>
+                            </div>
+                        </div>
+                        <div class="post-actions">
+                            ${currentUser && currentUser.id === post.user_id ? `
+                            <button class="btn-admin" onclick="editPost(${post.id})">编辑</button>
+                            <button class="btn-admin" onclick="deletePost(${post.id})">删除</button>
+                            ` : ''}
+                        </div>
+                    </div>
+                    <h1 class="post-title">${post.title}</h1>
+                    <div class="post-content">${post.content}</div>
+                    <div class="post-footer">
+                        <div class="post-tags">${tagsHtml}</div>
+                        <div class="post-stats">
+                            <span class="stat"><i class="icon-eye"></i> ${post.view_count || 0}</span>
+                            <span class="stat"><i class="icon-like"></i> ${post.like_count || 0}</span>
+                            <span class="stat"><i class="icon-comment"></i> ${post.comment_count || 0}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 加载评论
+        async function loadComments() {
+            const { data: comments, error } = await supabase
+                .from('comments')
+                .select(`
+                    *,
+                    profiles:user_id (username, avatar_url)
+                `)
+                .eq('post_id', postId)
+                .eq('is_deleted', false)
+                .order('created_at', { ascending: true });
+
+            if (error) {
+                console.error('加载评论失败:', error);
+                return;
+            }
+
+            renderComments(comments);
+        }
+
+        // 渲染评论
+        function renderComments(comments) {
+            const commentsListEl = document.getElementById('comments-list');
+            commentsListEl.innerHTML = '';
+
+            if (comments.length === 0) {
+                commentsListEl.innerHTML = '<p>暂无评论</p>';
+                return;
+            }
+
+            comments.forEach(comment => {
+                const commentEl = document.createElement('div');
+                commentEl.className = 'comment';
+                const createdAt = new Date(comment.created_at).toLocaleDateString('zh-CN');
+
+                commentEl.innerHTML = `
+                    <div class="comment-header">
+                        <img src="${comment.profiles.avatar_url || 'default-avatar.png'}" alt="${comment.profiles.username}" class="avatar small">
+                        <a href="profile.html?id=${comment.user_id}">${comment.profiles.username}</a>
+                        <span class="comment-date">${createdAt}</span>
+                    </div>
+                    <div class="comment-content">${comment.content}</div>
+                    <div class="comment-actions">
+                        ${currentUser && currentUser.id === comment.user_id ? `
+                        <button class="btn-admin" onclick="deleteComment(${comment.id})">删除</button>
+                        ` : ''}
+                    </div>
+                `;
+                commentsListEl.appendChild(commentEl);
+            });
+        }
+
+        // 发表评论
+        document.getElementById('new-comment-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const content = document.getElementById('comment-content').value;
+
+            if (!currentUser) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                const { error } = await supabase
+                    .from('comments')
+                    .insert([
+                        {
+                            post_id: postId,
+                            user_id: currentUser.id,
+                            content
+                        }
+                    ]);
+
+                if (error) throw error;
+
+                document.getElementById('comment-content').value = '';
+                loadComments(); // 重新加载评论列表
+            } catch (error) {
+                console.error('发表评论失败:', error);
+            }
+        });
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+            if (postId) {
+                loadPostDetail();
+                loadComments();
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+    </script>
+</body>
+</html>
