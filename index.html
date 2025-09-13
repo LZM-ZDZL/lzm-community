@@ -1,61 +1,61 @@
-!DOCTYPE html
-html lang=zh
-head
-    meta charset=UTF-8
-    meta name=viewport content=width=device-width, initial-scale=1.0
-    titleLZM 社区title
-    script src=httpsunpkg.com@supabasesupabase-js@2script
-    style
-        body { font-family sans-serif; max-width 800px; margin 2rem auto; padding 0 1rem; }
-        .post { border 1px solid #ddd; padding 1rem; margin-bottom 1rem; border-radius 5px; }
-    style
-head
-body
-    h1欢迎来到 LZM 社区h1
-    p这是一个测试页面，用于验证 GitHub Pages 托管和 Supabase 连接。p
-    div id=posts
-        p正在加载帖子...p
-    div
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LZM 社区</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+        .post { border: 1px solid #ddd; padding: 1rem; margin-bottom: 1rem; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>欢迎来到 LZM 社区</h1>
+    <p>这是一个测试页面，用于验证 GitHub Pages 托管和 Supabase 连接。</p>
+    <div id="posts">
+        <p>正在加载帖子...</p>
+    </div>
 
-    script
-         ！！！重要：请替换成您自己的 URL 和 Key ！！！
-        const supabaseUrl = 'httpsymkthiwxtxngjgtlncxt.supabase.co';
+    <script>
+        // 重要：请替换成您自己的 URL 和 Key
+        const supabaseUrl = 'https://ymkthiwxtxngjgtlncxt.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlta3RoaXd4dHhuZ2pndGxuY3h0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc2ODEyOTYsImV4cCI6MjA3MzI1NzI5Nn0.Xk7HoZQjRZ_4gjTncMAJijQuwvKnIgMOw7tR1MDKvBY';
         
         const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
         async function loadPosts() {
-             尝试从 profiles 表读取数据
+            // 尝试从 profiles 表读取数据
             const { data, error } = await supabase
                 .from('profiles')
-                .select('username, created_at')  选择要查询的字段
-                .limit(5);  限制只取5条
+                .select('username, created_at')
+                .limit(5);
 
             const postsContainer = document.getElementById('posts');
 
             if (error) {
-                console.error('连接Supabase失败', error);
-                postsContainer.innerHTML = `p style=color red;连接数据库失败 ${error.message}p`;
+                console.error('连接Supabase失败:', error);
+                postsContainer.innerHTML = '<p style="color: red;">连接数据库失败: ' + error.message + '</p>';
                 return;
             }
 
-            if (data && data.length  0) {
-                 如果成功获取到数据，动态生成列表
-                const postsHtml = data.map(profile = `
-                    div class=post
-                        h3用户 ${profile.username}h3
-                        p加入时间 ${new Date(profile.created_at).toLocaleString('zh-CN')}p
-                    div
+            if (data && data.length > 0) {
+                // 如果成功获取到数据，动态生成列表
+                const postsHtml = data.map(profile => `
+                    <div class="post">
+                        <h3>用户: ${profile.username}</h3>
+                        <p>加入时间: ${new Date(profile.created_at).toLocaleString('zh-CN')}</p>
+                    </div>
                 `).join('');
 
                 postsContainer.innerHTML = postsHtml;
             } else {
-                postsContainer.innerHTML = 'p还没有用户数据，快去创建一条吧！p';
+                postsContainer.innerHTML = '<p>还没有用户数据，快去创建一条吧！</p>';
             }
         }
 
-         页面加载后执行
+        // 页面加载后执行
         loadPosts();
-    script
-body
-html
+    </script>
+</body>
+</html>
